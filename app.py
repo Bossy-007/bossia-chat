@@ -1,7 +1,9 @@
 import os
+import json
+import urllib.parse
+import urllib.request
 from flask import Flask, render_template, request, jsonify
 from groq import Groq
-from duckduckgo_search import DDGS
 
 app = Flask(__name__)
 
@@ -9,14 +11,21 @@ api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=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)
 
 def buscar_en_web(query):
-    """Busca en Internet los últimos resultados de DuckDuckGo"""
+    """Busca en Internet usando la API HTML ligera de DuckDuckGo"""
     try:
-        results = DDGS().text(query, max_results=3)
-        texto_resultados = ""
-        for r in results:
-            texto_resultados += f"- {r['title']}: {r['body']}\n"
-        return texto_resultados
-    except Exception as e:
+        url = "https://html.duckduckgo.com/html/?q=" + urllib.parse.quote(query)
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=4) as response:
+            html = response.read().decode('utf-8')
+            # Extraemos texto simple
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, 'html.parser')
+            snippets = [a.get_text() for a in soup.find_all('a', class_='result__snippet')][:3]
+            return "\n".join(snippets)
+    except Exception:
         return ""
 
 @app.route("/")
@@ -32,13 +41,11 @@ def chat():
     if not user_message:
         return jsonify({"error": "Mensaje vacío"}), 400
 
-    # 1. Buscamos información fresca en Internet
     info_web = buscar_en_web(user_message)
 
-    # 2. Creamos la instrucción con los datos encontrados
     system_prompt = (
-        "Eres BossIA, un asistente útil y moderno. "
-        "Usa la siguiente información reciente de Internet si es relevante para responder a la pregunta del usuario:\n"
+        "Eres BossIA, un asistente moderno y directo. "
+        "Si la siguiente información web es útil para la duda del usuario, úsala:\n"
         f"{info_web}"
     )
 
