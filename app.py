@@ -20,11 +20,7 @@ def chat():
     if not user_message:
         return jsonify({"error": "Mensaje vacío"}), 400
 
-    system_prompt = (
-        "Eres BossIA, un asistente inteligente, directo y útil."
-    )
-
-    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_message}]
+    messages = [{"role": "system", "content": "Eres BossIA, un asistente útil y directo."}] + history + [{"role": "user", "content": user_message}]
 
     try:
         completion = client.chat.completions.create(
