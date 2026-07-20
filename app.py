@@ -1,0 +1,48 @@
+import os
+from flask import Flask, render_template, request, jsonify
+from groq import Groq
+
+app = Flask(__name__)
+
+# Asegúrate de exportar tu API key en la terminal con:
+# export GROQ_API_KEY="tu_clave_aqui"
+# O puedes pegarla directamente (no recomendado para producción): client = Groq(api_key="tu_clave")
+client = Groq()
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    data = request.json
+    user_message = data.get("message", "")
+    history = data.get("history", [])
+
+    if not user_message:
+        return jsonify({"error": "Mensaje vacío"}), 400
+
+    # Construir el historial para la API
+    messages = [
+        {"role": "system", "content": "Eres BossIA, un asistente personal elegante, eficiente, servicial y minimalista."}
+    ]
+    
+    for msg in history:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+        
+    messages.append({"role": "user", "content": user_message})
+
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1024,
+        )
+        bot_response = completion.choices[0].message.content
+        return jsonify({"response": bot_response})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)

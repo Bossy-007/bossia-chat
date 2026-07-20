@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BossIA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="corner corner-tl">007</div>
+    <div class="corner corner-tr">bossy</div>
+    <div class="corner corner-bl">bossy</div>
+    <div class="corner corner-br">007</div>
+
+    <main class="container">
+        <header class="brand-header">
+            <h1 class="brand-title">BossIA</h1>
+            <p class="brand-subtitle">para lo que necesites</p>
+        </header>
+
+        <section class="chat-wrapper">
+            <div id="chat-box" class="chat-box">
+                <div class="message system-welcome">
+                    <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                </div>
+            </div>
+
+            <form id="chat-form" class="chat-form">
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    placeholder="Escribe tu mensaje aquí..." 
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" id="send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
