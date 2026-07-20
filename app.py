@@ -5,7 +5,7 @@ from groq import Groq
 app = Flask(__name__)
 
 api_key = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=api_key)
+client = Groq(api_key=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)
 @app.route("/")
 def index():
     return render_template("index.html")
