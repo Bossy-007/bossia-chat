@@ -4,11 +4,8 @@ from groq import Groq
 
 app = Flask(__name__)
 
-# Asegúrate de exportar tu API key en la terminal con:
-# export GROQ_API_KEY="tu_clave_aqui"
-# O puedes pegarla directamente (no recomendado para producción): client = Groq(api_key="tu_clave")
-client = Groq()
-
+api_key = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key)
 @app.route("/")
 def index():
     return render_template("index.html")
