@@ -1,5 +1,5 @@
 import os
-import json
+import re
 import urllib.parse
 import urllib.request
 from flask import Flask, render_template, request, jsonify
@@ -11,7 +11,7 @@ api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=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)
 
 def buscar_en_web(query):
-    """Busca en Internet usando la API HTML ligera de DuckDuckGo"""
+    """Busca en Internet sin necesitar librerías externas extra"""
     try:
         url = "https://html.duckduckgo.com/html/?q=" + urllib.parse.quote(query)
         req = urllib.request.Request(
@@ -19,12 +19,15 @@ def buscar_en_web(query):
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         )
         with urllib.request.urlopen(req, timeout=4) as response:
-            html = response.read().decode('utf-8')
-            # Extraemos texto simple
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(html, 'html.parser')
-            snippets = [a.get_text() for a in soup.find_all('a', class_='result__snippet')][:3]
-            return "\n".join(snippets)
+            html = response.read().decode('utf-8', errors='ignore')
+            # Extraemos los resultados con expresiones regulares de Python
+            snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+            resultados = []
+            for s in snippets[:3]:
+                texto_limpio = re.sub(r'<[^>]+>', '', s).strip()
+                if texto_limpio:
+                    resultados.append(texto_limpio)
+            return "\n".join(resultados)
     except Exception:
         return ""
 
@@ -44,8 +47,8 @@ def chat():
     info_web = buscar_en_web(user_message)
 
     system_prompt = (
-        "Eres BossIA, un asistente moderno y directo. "
-        "Si la siguiente información web es útil para la duda del usuario, úsala:\n"
+        "Eres BossIA, un asistente inteligente. "
+        "Usa la siguiente información reciente extraída de Internet si ayuda a responder a la pregunta:\n"
         f"{info_web}"
     )
 
