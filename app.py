@@ -1,11 +1,38 @@
 import os
+import requests
 from flask import Flask, render_template, request, jsonify
 from groq import Groq
 
 app = Flask(__name__)
 
-api_key = os.environ.get("GROQ_API_KEY")
+groq_key = os.environ.get(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)
+tavily_key = os.environ.get(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)
+
 client = Groq(api_key=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)
+
+def buscar_en_web(consulta):
+    if not tavily_key:
+        return ""
+    try:
+        response = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": tavily_key,
+                "query": consulta,
+                "search_depth": "basic",
+                "max_results": 3
+            },
+            timeout=5
+        )
+        data = response.json()
+        resultados = data.get("results", [])
+        
+        texto = ""
+        for item in resultados:
+            texto += f"- {item.get('title')}: {item.get('content')}\n"
+        return texto
+    except Exception:
+        return ""
 
 @app.route("/")
 def index():
@@ -20,7 +47,15 @@ def chat():
     if not user_message:
         return jsonify({"error": "Mensaje vacío"}), 400
 
-    messages = [{"role": "system", "content": "Eres BossIA, un asistente útil y directo."}] + history + [{"role": "user", "content": user_message}]
+    info_web = buscar_en_web(user_message)
+
+    system_prompt = (
+        "Eres BossIA, un asistente inteligente y actualizado. "
+        "Utiliza la siguiente información reciente extraída de Internet para responder con datos actuales:\n"
+        f"{info_web}"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_message}]
 
     try:
         completion = client.chat.completions.create(
