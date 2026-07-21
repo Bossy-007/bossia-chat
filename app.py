@@ -5,11 +5,12 @@ from groq import Groq
 
 app = Flask(__name__)
 
-# Render le pasará automáticamente las claves de forma 100% segura
+# Carga las claves desde las Variables de Entorno de Render
 groq_key = os.environ.get("GROQ_API_KEY")
 tavily_key = os.environ.get("TAVILY_API_KEY")
 
-client = Groq(api_key=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)
+# Conecta con Groq usando la variable groq_key
+client = Groq(api_key=groq_key)
 
 def buscar_en_web(consulta):
     if not tavily_key:
