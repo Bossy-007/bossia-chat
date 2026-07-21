@@ -5,11 +5,11 @@ from groq import Groq
 
 app = Flask(__name__)
 
-# Claves de API directas como texto
-groq_key = "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"
-tavily_key = "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"
+# Render le pasará automáticamente las claves de forma 100% segura
+groq_key = os.environ.get("GROQ_API_KEY")
+tavily_key = os.environ.get("TAVILY_API_KEY")
 
-client = Groq(api_key=groq_key)
+client = Groq(api_key=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)
 
 def buscar_en_web(consulta):
     if not tavily_key:
