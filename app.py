@@ -6,14 +6,14 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# Configuración de Groq
-groq_key = os.environ.get(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)
-tavily_key = os.environ.get(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)
+# Configuración de Groq y Tavily
+groq_key = os.environ.get("GROQ_API_KEY")
+tavily_key = os.environ.get("TAVILY_API_KEY")
 client = Groq(api_key=groq_key)
 
 # Configuración de Supabase
-supabase_url = os.environ.get(https://evhexbbblhzvuxnqxnuy.supabase.co/rest/v1/)
-supabase_key = os.environ.get(sb_publishable_bj_iRjREHu6xoNBgxp-GQw_uoJo4IZl)
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 def buscar_en_web(consulta):
