@@ -6,7 +6,7 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# Configuración de Groq y Tavily
+# Configuración de Groq
 groq_key = os.environ.get("GROQ_API_KEY")
 tavily_key = os.environ.get("TAVILY_API_KEY")
 client = Groq(api_key=groq_key)
@@ -14,7 +14,13 @@ client = Groq(api_key=groq_key)
 # Configuración de Supabase
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
+
+supabase: Client = None
+if supabase_url and supabase_key:
+    try:
+        supabase = create_client(supabase_url, supabase_key)
+    except Exception as e:
+        print(f"Error conectando a Supabase: {e}")
 
 def buscar_en_web(consulta):
     if not tavily_key:
@@ -34,31 +40,35 @@ def buscar_en_web(consulta):
 def index():
     return render_template("index.html")
 
-# --- RUTAS DE GESTIÓN DE CHATS ---
-
 @app.route("/api/chats", methods=["GET"])
 def get_chats():
-    """Obtiene la lista de conversaciones guardadas"""
     if not supabase:
         return jsonify([])
-    res = supabase.table("chats").select("*").order("created_at", desc=True).execute()
-    return jsonify(res.data)
+    try:
+        res = supabase.table("chats").select("*").order("created_at", desc=True).execute()
+        return jsonify(res.data)
+    except Exception:
+        return jsonify([])
 
 @app.route("/api/chats", methods=["POST"])
 def create_chat():
-    """Crea una nueva conversación"""
     if not supabase:
-        return jsonify({"error": "No DB"}), 500
-    res = supabase.table("chats").insert({"title": "Nuevo Chat"}).execute()
-    return jsonify(res.data[0])
+        return jsonify({"id": "default"})
+    try:
+        res = supabase.table("chats").insert({"title": "Nuevo Chat"}).execute()
+        return jsonify(res.data[0])
+    except Exception:
+        return jsonify({"id": "default"})
 
 @app.route("/api/chats/<chat_id>/messages", methods=["GET"])
 def get_messages(chat_id):
-    """Obtiene los mensajes de un chat específico"""
-    if not supabase:
+    if not supabase or chat_id == "default":
         return jsonify([])
-    res = supabase.table("messages").select("*").eq("chat_id", chat_id).order("created_at", desc=False).execute()
-    return jsonify(res.data)
+    try:
+        res = supabase.table("messages").select("*").eq("chat_id", chat_id).order("created_at", desc=False).execute()
+        return jsonify(res.data)
+    except Exception:
+        return jsonify([])
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
@@ -66,30 +76,27 @@ def chat():
     user_message = data.get("message", "")
     chat_id = data.get("chat_id")
 
-    if not user_message or not chat_id:
-        return jsonify({"error": "Faltan datos"}), 400
+    if not user_message:
+        return jsonify({"error": "Mensaje vacío"}), 400
 
-    # Guardar mensaje del usuario en la BD
-    if supabase:
-        supabase.table("messages").insert({"chat_id": chat_id, "role": "user", "content": user_message}).execute()
-
-    # Cargar historial del chat para dar contexto a Groq
-    history = []
-    if supabase:
-        msg_history = supabase.table("messages").select("role, content").eq("chat_id", chat_id).order("created_at", desc=False).execute()
-        history = [{"role": m["role"], "content": m["content"]} for m in msg_history.data[:-1]]
+    # Guardar en BD si está disponible
+    if supabase and chat_id and chat_id != "default":
+        try:
+            supabase.table("messages").insert({"chat_id": chat_id, "role": "user", "content": user_message}).execute()
+        except Exception as e:
+            print(f"Error guardando mensaje usuario: {e}")
 
     info_web = buscar_en_web(user_message)
     system_prompt = (
         "Eres BossIA, un asistente inteligente, directo y conciso.\n"
         "REGLAS:\n"
         "- Sé breve, claro y ve directo al grano.\n"
-        "- Si el usuario solo saluda, responde en 1 o 2 frases corto y amigable.\n"
-        "- Utiliza información de Internet solo si es relevante:\n"
+        "- Si el usuario solo saluda, responde amigablemente en 1 o 2 frases.\n"
+        "- Usa esta info web solo si la pregunta requiere datos actuales:\n"
         f"{info_web}"
     )
 
-    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_message}]
+    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}]
 
     try:
         completion = client.chat.completions.create(
@@ -100,11 +107,12 @@ def chat():
         )
         bot_response = completion.choices[0].message.content
 
-        # Guardar respuesta del bot en la BD
-        if supabase:
-            supabase.table("messages").insert({"chat_id": chat_id, "role": "assistant", "content": bot_response}).execute()
-            # Actualizar el título del chat con el primer mensaje del usuario
-            supabase.table("chats").update({"title": user_message[:30] + "..."}).eq("id", chat_id).execute()
+        if supabase and chat_id and chat_id != "default":
+            try:
+                supabase.table("messages").insert({"chat_id": chat_id, "role": "assistant", "content": bot_response}).execute()
+                supabase.table("chats").update({"title": user_message[:25] + "..."}).eq("id", chat_id).execute()
+            except Exception as e:
+                print(f"Error guardando respuesta bot: {e}")
 
         return jsonify({"response": bot_response})
     except Exception as e:
