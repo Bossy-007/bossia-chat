@@ -1,154 +1,260 @@
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        let currentChatId = null;
-
-        const sidebar = document.getElementById('sidebar');
-        const toggleBtn = document.getElementById('toggle-btn');
-        const newChatBtn = document.getElementById('new-chat-btn');
-        const chatForm = document.getElementById('chat-form');
-        const userInput = document.getElementById('user-input');
-        const chatBox = document.getElementById('chat-box');
-        const chatList = document.getElementById('chat-list');
-
-        // Abrir / Cerrar Sidebar
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-
-        // Función para añadir mensaje a la pantalla
-        function appendMessage(role, text) {
-            const div = document.createElement('div');
-            div.className = `message ${role}-message`;
-            const p = document.createElement('p');
-            p.innerText = text;
-            div.appendChild(p);
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BossIA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <style>
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 18px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
         }
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100vh;
+            background: rgba(10, 10, 12, 0.95);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 80px 15px 20px 15px;
+            box-sizing: border-box;
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .new-chat-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .new-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .chat-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .chat-item {
+            padding: 12px;
+            border-radius: 8px;
+            color: #aaa;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.2s;
+        }
+        .chat-item:hover, .chat-item.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
 
-        // Cargar y mostrar TODOS los chats acumulados
-        async function loadChats() {
-            try {
-                const res = await fetch('/api/chats');
-                const chats = await res.json();
-                chatList.innerHTML = '';
+    <button class="sidebar-toggle" id="toggle-btn">☰</button>
 
-                if (Array.isArray(chats) && chats.length > 0) {
-                    chats.forEach(chat => {
-                        const li = document.createElement('li');
-                        li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-                        li.innerText = chat.title || 'Nuevo Chat';
-                        li.addEventListener('click', () => selectChat(chat.id));
-                        chatList.appendChild(li);
-                    });
+    <aside class="sidebar" id="sidebar">
+        <button class="new-chat-btn" id="new-chat-btn">+ Nuevo Chat</button>
+        <ul class="chat-list" id="chat-list"></ul>
+    </aside>
 
-                    // Si no hay un chat seleccionado, seleccionamos el primero
-                    if (!currentChatId) {
-                        selectChat(chats[0].id);
+    <div class="corner corner-tl">007</div>
+    <div class="corner corner-tr">bossy</div>
+    <div class="corner corner-bl">bossy</div>
+    <div class="corner corner-br">007</div>
+
+    <main class="container">
+        <header class="brand-header">
+            <h1 class="brand-title">BossIA</h1>
+            <p class="brand-subtitle">para lo que necesites</p>
+        </header>
+
+        <section class="chat-wrapper">
+            <div id="chat-box" class="chat-box">
+                <div class="message system-welcome">
+                    <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                </div>
+            </div>
+
+            <form id="chat-form" class="chat-form">
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    placeholder="Escribe tu mensaje aquí..." 
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" id="send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentChatId = null;
+
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('toggle-btn');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const chatForm = document.getElementById('chat-form');
+            const userInput = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+            const chatList = document.getElementById('chat-list');
+
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+
+            function appendMessage(role, text) {
+                const div = document.createElement('div');
+                div.className = `message ${role}-message`;
+                const p = document.createElement('p');
+                p.innerText = text;
+                div.appendChild(p);
+                chatBox.appendChild(div);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            async function loadChats() {
+                try {
+                    const res = await fetch('/api/chats');
+                    const chats = await res.json();
+                    chatList.innerHTML = '';
+
+                    if (Array.isArray(chats) && chats.length > 0) {
+                        chats.forEach(chat => {
+                            const li = document.createElement('li');
+                            li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+                            li.innerText = chat.title || 'Nuevo Chat';
+                            li.addEventListener('click', () => selectChat(chat.id));
+                            chatList.appendChild(li);
+                        });
+
+                        if (!currentChatId) {
+                            selectChat(chats[0].id);
+                        }
+                    } else {
+                        createNewChat();
                     }
-                } else {
-                    // Si la base de datos no tiene chats, creamos el primero
-                    createNewChat();
+                } catch (e) {
+                    console.error("Error al cargar chats:", e);
                 }
-            } catch (e) {
-                console.error("Error al cargar lista de chats:", e);
             }
-        }
 
-        // Crear un nuevo chat sin borrar los anteriores de la lista
-        async function createNewChat() {
-            try {
-                const res = await fetch('/api/chats', { method: 'POST' });
-                const chat = await res.json();
-                
-                // Fijamos el ID del nuevo chat activo
-                currentChatId = chat.id;
-
-                // Limpiamos la pantalla de conversación para la nueva sesión
-                chatBox.innerHTML = `
-                    <div class="message system-welcome">
-                        <p>Hola. ¿En qué te puedo colaborar hoy?</p>
-                    </div>`;
-
-                // Recargamos la lista para que aparezca el nuevo + todos los anteriores
-                await loadChats();
-            } catch (e) {
-                console.error("Error al crear chat:", e);
-            }
-        }
-
-        newChatBtn.addEventListener('click', createNewChat);
-
-        // Seleccionar y recuperar mensajes de un chat del historial
-        async function selectChat(chatId) {
-            currentChatId = chatId;
-            
-            // Actualizar clase 'active' visual en la lista
-            const items = chatList.querySelectorAll('.chat-item');
-            items.forEach(item => item.classList.remove('active'));
-
-            try {
-                const res = await fetch(`/api/chats/${chatId}/messages`);
-                const messages = await res.json();
-                chatBox.innerHTML = '';
-
-                if (!messages || messages.length === 0) {
+            async function createNewChat() {
+                try {
+                    const res = await fetch('/api/chats', { method: 'POST' });
+                    const chat = await res.json();
+                    currentChatId = chat.id;
                     chatBox.innerHTML = `
                         <div class="message system-welcome">
                             <p>Hola. ¿En qué te puedo colaborar hoy?</p>
                         </div>`;
-                } else {
-                    messages.forEach(m => {
-                        appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
-                    });
-                }
-
-                // Cargar lista de chats para mantener resaltado el activo
-                const updatedChats = await (await fetch('/api/chats')).json();
-                chatList.innerHTML = '';
-                updatedChats.forEach(chat => {
-                    const li = document.createElement('li');
-                    li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-                    li.innerText = chat.title || 'Nuevo Chat';
-                    li.addEventListener('click', () => selectChat(chat.id));
-                    chatList.appendChild(li);
-                });
-
-            } catch (e) {
-                console.error("Error al seleccionar chat:", e);
-            }
-        }
-
-        // Enviar mensaje
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            appendMessage('user', text);
-            userInput.value = '';
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, chat_id: currentChatId })
-                });
-
-                const data = await res.json();
-                if (data.response) {
-                    appendMessage('bot', data.response);
-                    // Actualizamos la lista porque el servidor cambia el título al primer mensaje
                     loadChats();
-                } else {
-                    appendMessage('bot', 'Error del servidor: ' + (data.error || 'No responde.'));
+                } catch (e) {
+                    console.error("Error al crear chat:", e);
                 }
-            } catch (err) {
-                appendMessage('bot', 'Error de red al conectar con el servidor.');
             }
-        });
 
-        // Cargar todo al iniciar
-        loadChats();
-    });
-</script>
+            newChatBtn.addEventListener('click', createNewChat);
+
+            async function selectChat(chatId) {
+                currentChatId = chatId;
+                try {
+                    const res = await fetch(`/api/chats/${chatId}/messages`);
+                    const messages = await res.json();
+                    chatBox.innerHTML = '';
+
+                    if (!messages || messages.length === 0) {
+                        chatBox.innerHTML = `
+                            <div class="message system-welcome">
+                                <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                            </div>`;
+                    } else {
+                        messages.forEach(m => {
+                            appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
+                        });
+                    }
+                    loadChats();
+                } catch (e) {
+                    console.error("Error al seleccionar chat:", e);
+                }
+            }
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = userInput.value.trim();
+                if (!text) return;
+
+                appendMessage('user', text);
+                userInput.value = '';
+
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: text, chat_id: currentChatId })
+                    });
+
+                    const data = await res.json();
+                    if (data.response) {
+                        appendMessage('bot', data.response);
+                        loadChats();
+                    } else {
+                        appendMessage('bot', 'Error: ' + (data.error || 'Sin respuesta.'));
+                    }
+                } catch (err) {
+                    appendMessage('bot', 'Error de conexión.');
+                }
+            });
+
+            loadChats();
+        });
+    </script>
+</body>
+</html>
