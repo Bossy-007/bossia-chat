@@ -134,127 +134,148 @@
         </section>
     </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            let currentChatId = null;
+   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let currentChatId = null;
 
-            const sidebar = document.getElementById('sidebar');
-            const toggleBtn = document.getElementById('toggle-btn');
-            const newChatBtn = document.getElementById('new-chat-btn');
-            const chatForm = document.getElementById('chat-form');
-            const userInput = document.getElementById('user-input');
-            const chatBox = document.getElementById('chat-box');
-            const chatList = document.getElementById('chat-list');
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatBox = document.getElementById('chat-box');
+        const chatList = document.getElementById('chat-list');
 
-            toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
-            });
+        // Abrir / Cerrar Menú
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
 
-            function appendMessage(role, text) {
-                const div = document.createElement('div');
-                div.className = `message ${role}-message`;
-                const p = document.createElement('p');
-                p.innerText = text;
-                div.appendChild(p);
-                chatBox.appendChild(div);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
+        // Añadir mensaje a la pantalla sin borrar lo anterior
+        function appendMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role}-message`;
+            const p = document.createElement('p');
+            p.innerText = text;
+            div.appendChild(p);
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-            async function loadChats() {
-                try {
-                    const res = await fetch('/api/chats');
-                    const chats = await res.json();
-                    chatList.innerHTML = '';
+        // Cargar lista de la barra lateral
+        async function loadSidebarList() {
+            try {
+                const res = await fetch('/api/chats');
+                const chats = await res.json();
+                chatList.innerHTML = '';
 
-                    if (Array.isArray(chats) && chats.length > 0) {
-                        chats.forEach(chat => {
-                            const li = document.createElement('li');
-                            li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-                            li.innerText = chat.title || 'Nuevo Chat';
-                            li.addEventListener('click', () => selectChat(chat.id));
-                            chatList.appendChild(li);
-                        });
-
-                        if (!currentChatId) {
-                            selectChat(chats[0].id);
-                        }
-                    } else {
-                        createNewChat();
-                    }
-                } catch (e) {
-                    console.error("Error al cargar chats:", e);
+                if (Array.isArray(chats) && chats.length > 0) {
+                    chats.forEach(chat => {
+                        const li = document.createElement('li');
+                        li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+                        li.innerText = chat.title || 'Nuevo Chat';
+                        li.addEventListener('click', () => selectChat(chat.id));
+                        chatList.appendChild(li);
+                    });
                 }
+            } catch (e) {
+                console.error("Error al actualizar menú:", e);
             }
+        }
 
-            async function createNewChat() {
-                try {
-                    const res = await fetch('/api/chats', { method: 'POST' });
-                    const chat = await res.json();
-                    currentChatId = chat.id;
+        // Iniciar aplicación
+        async function initApp() {
+            try {
+                const res = await fetch('/api/chats');
+                const chats = await res.json();
+                if (Array.isArray(chats) && chats.length > 0) {
+                    selectChat(chats[0].id);
+                } else {
+                    createNewChat();
+                }
+            } catch (e) {
+                createNewChat();
+            }
+        }
+
+        // Crear Nuevo Chat
+        async function createNewChat() {
+            try {
+                const res = await fetch('/api/chats', { method: 'POST' });
+                const chat = await res.json();
+                currentChatId = chat.id;
+                
+                chatBox.innerHTML = `
+                    <div class="message system-welcome">
+                        <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                    </div>`;
+                
+                loadSidebarList();
+            } catch (e) {
+                console.error("Error al crear chat:", e);
+            }
+        }
+
+        newChatBtn.addEventListener('click', createNewChat);
+
+        // Seleccionar Chat existente del menú
+        async function selectChat(chatId) {
+            currentChatId = chatId;
+            try {
+                const res = await fetch(`/api/chats/${chatId}/messages`);
+                const messages = await res.json();
+                chatBox.innerHTML = '';
+
+                if (!messages || messages.length === 0) {
                     chatBox.innerHTML = `
                         <div class="message system-welcome">
                             <p>Hola. ¿En qué te puedo colaborar hoy?</p>
                         </div>`;
-                    loadChats();
-                } catch (e) {
-                    console.error("Error al crear chat:", e);
-                }
-            }
-
-            newChatBtn.addEventListener('click', createNewChat);
-
-            async function selectChat(chatId) {
-                currentChatId = chatId;
-                try {
-                    const res = await fetch(`/api/chats/${chatId}/messages`);
-                    const messages = await res.json();
-                    chatBox.innerHTML = '';
-
-                    if (!messages || messages.length === 0) {
-                        chatBox.innerHTML = `
-                            <div class="message system-welcome">
-                                <p>Hola. ¿En qué te puedo colaborar hoy?</p>
-                            </div>`;
-                    } else {
-                        messages.forEach(m => {
-                            appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
-                        });
-                    }
-                    loadChats();
-                } catch (e) {
-                    console.error("Error al seleccionar chat:", e);
-                }
-            }
-
-            chatForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const text = userInput.value.trim();
-                if (!text) return;
-
-                appendMessage('user', text);
-                userInput.value = '';
-
-                try {
-                    const res = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: text, chat_id: currentChatId })
+                } else {
+                    messages.forEach(m => {
+                        appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
                     });
-
-                    const data = await res.json();
-                    if (data.response) {
-                        appendMessage('bot', data.response);
-                        loadChats();
-                    } else {
-                        appendMessage('bot', 'Error: ' + (data.error || 'Sin respuesta.'));
-                    }
-                } catch (err) {
-                    appendMessage('bot', 'Error de conexión.');
                 }
-            });
+                loadSidebarList();
+            } catch (e) {
+                console.error("Error al cargar conversación:", e);
+            }
+        }
 
-            loadChats();
+        // Enviar Mensaje (Sin limpiar la pantalla)
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Pinta el mensaje del usuario de inmediato
+            appendMessage('user', text);
+            userInput.value = '';
+
+            try {
+                // 2. Envía la petición al servidor
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, chat_id: currentChatId })
+                });
+
+                const data = await res.json();
+                
+                // 3. Pinta la respuesta del bot sin reiniciar el cuadro
+                if (data.response) {
+                    appendMessage('bot', data.response);
+                    loadSidebarList(); // Solo actualiza los nombres en el menú lateral
+                } else {
+                    appendMessage('bot', 'Error: ' + (data.error || 'No hay respuesta.'));
+                }
+            } catch (err) {
+                appendMessage('bot', 'Error de conexión con el servidor.');
+            }
         });
-    </script>
+
+        initApp();
+    });
+</script>
 </body>
 </html>
