@@ -73,6 +73,20 @@ def create_chat():
     local_chats[new_id] = {"title": "Nuevo Chat", "messages": []}
     return jsonify({"id": new_id, "title": "Nuevo Chat"})
 
+@app.route("/api/chats/<chat_id>", methods=["DELETE"])
+def delete_chat(chat_id):
+    if supabase:
+        try:
+            supabase.table("chats").delete().eq("id", chat_id).execute()
+            return jsonify({"success": True})
+        except Exception as e:
+            print(f"Error borrando chat: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    # Fallback local
+    if chat_id in local_chats:
+        del local_chats[chat_id]
+    return jsonify({"success": True})
 @app.route("/api/chats/<chat_id>/messages", methods=["GET"])
 def get_messages(chat_id):
     if supabase:
