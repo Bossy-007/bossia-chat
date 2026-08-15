@@ -14,6 +14,13 @@
     "{{ supabase_url }}",
     "{{ supabase_anon_key }}"
   );
+    async function getAuthHeaders() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token || ''}`
+    };
+}
 </script>
     
     <style>
