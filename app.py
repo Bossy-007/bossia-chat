@@ -107,9 +107,6 @@ def delete_chat(chat_id):
     # Fallback local
     if chat_id in local_chats:
         del local_chats[chat_id]
-    return jsonify({"success": True})    # Fallback local
-    if chat_id in local_chats:
-        del local_chats[chat_id]
     return jsonify({"success": True})
 @app.route("/api/chats/<chat_id>/messages", methods=["GET"])
 def get_messages(chat_id):
