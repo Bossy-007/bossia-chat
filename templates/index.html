@@ -172,205 +172,205 @@
         const chatBox = document.getElementById('chat-box');
         const chatList = document.getElementById('chat-list');
 
-        // Abrir / Cerrar Menú
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
+        <script>
+    let currentChatId = null;
 
-        // Añadir mensaje a la pantalla sin borrar lo anterior
-        function appendMessage(role, text) {
-            const div = document.createElement('div');
-            div.className = `message ${role}-message`;
-            const p = document.createElement('p');
-            p.innerText = text;
-            div.appendChild(p);
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatBox = document.getElementById('chat-box');
+    const chatList = document.getElementById('chat-list');
+    const loginScreen = document.getElementById('login-screen');
+    const mainApp = document.querySelector('.container');
 
-        // Cargar lista de la barra lateral
-        async function loadSidebarList() {
-            try {
-              const headers = await getAuthHeaders();
-const res = await fetch('/api/chats', { headers });
-                const chats = await res.json();
-                chatList.innerHTML = '';
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
 
-                if (Array.isArray(chats) && chats.length > 0) {
-                   chats.forEach(chat => {
-                        const li = document.createElement('li');
-                        li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+    function appendMessage(role, text) {
+        const div = document.createElement('div');
+        div.className = `message ${role}-message`;
+        const p = document.createElement('p');
+        p.innerText = text;
+        div.appendChild(p);
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-                        const span = document.createElement('span');
-                        span.innerText = chat.title || 'Nuevo Chat';
-                        span.style.flex = '1';
-                        span.style.overflow = 'hidden';
-                        span.style.textOverflow = 'ellipsis';
-                        span.addEventListener('click', () => selectChat(chat.id));
+    async function loadSidebarList() {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/chats', { headers });
+            const chats = await res.json();
+            chatList.innerHTML = '';
 
-                        const delBtn = document.createElement('button');
-                        delBtn.innerText = '🗑';
-                        delBtn.className = 'delete-chat-btn';
-                        delBtn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            if (!confirm('¿Borrar esta conversación?')) return;
-                            const headers = await getAuthHeaders();
-await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers });
-                            if (chat.id === currentChatId) {
-                                createNewChat();
-                            } else {
-                                loadSidebarList();
-                            }
-                        });
+            if (Array.isArray(chats) && chats.length > 0) {
+                chats.forEach(chat => {
+                    const li = document.createElement('li');
+                    li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
 
-                        li.appendChild(span);
-                        li.appendChild(delBtn);
-                        chatList.appendChild(li);
+                    const span = document.createElement('span');
+                    span.innerText = chat.title || 'Nuevo Chat';
+                    span.style.flex = '1';
+                    span.style.overflow = 'hidden';
+                    span.style.textOverflow = 'ellipsis';
+                    span.addEventListener('click', () => selectChat(chat.id));
+
+                    const delBtn = document.createElement('button');
+                    delBtn.innerText = '🗑';
+                    delBtn.className = 'delete-chat-btn';
+                    delBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (!confirm('¿Borrar esta conversación?')) return;
+                        const delHeaders = await getAuthHeaders();
+                        await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers: delHeaders });
+                        if (chat.id === currentChatId) {
+                            createNewChat();
+                        } else {
+                            loadSidebarList();
+                        }
                     });
-                }
-            } catch (e) {
-                console.error("Error al actualizar menú:", e);
-            }
-        }
 
-        // Iniciar aplicación
-        async function initApp() {
-            try {
-                const res = await fetch('/api/chats');
-                const chats = await res.json();
-                if (Array.isArray(chats) && chats.length > 0) {
-                    selectChat(chats[0].id);
-                } else {
-                    createNewChat();
-                }
-            } catch (e) {
+                    li.appendChild(span);
+                    li.appendChild(delBtn);
+                    chatList.appendChild(li);
+                });
+            }
+        } catch (e) {
+            console.error("Error al actualizar menú:", e);
+        }
+    }
+
+    async function initApp() {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/chats', { headers });
+            const chats = await res.json();
+            if (Array.isArray(chats) && chats.length > 0) {
+                selectChat(chats[0].id);
+            } else {
                 createNewChat();
             }
+        } catch (e) {
+            createNewChat();
         }
+    }
 
-        // Crear Nuevo Chat
-        async function createNewChat() {
-            try {
-                const res = await fetch('/api/chats', { method: 'POST' });
-                const chat = await res.json();
-                currentChatId = chat.id;
-                
+    async function createNewChat() {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/chats', { method: 'POST', headers });
+            const chat = await res.json();
+            currentChatId = chat.id;
+
+            chatBox.innerHTML = `
+                <div class="message system-welcome">
+                    <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                </div>`;
+
+            loadSidebarList();
+        } catch (e) {
+            console.error("Error al crear chat:", e);
+        }
+    }
+
+    newChatBtn.addEventListener('click', createNewChat);
+
+    async function selectChat(chatId) {
+        currentChatId = chatId;
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/chats/${chatId}/messages`, { headers });
+            const messages = await res.json();
+            chatBox.innerHTML = '';
+
+            if (!messages || messages.length === 0) {
                 chatBox.innerHTML = `
                     <div class="message system-welcome">
                         <p>Hola. ¿En qué te puedo colaborar hoy?</p>
                     </div>`;
-                
-                loadSidebarList();
-            } catch (e) {
-                console.error("Error al crear chat:", e);
+            } else {
+                messages.forEach(m => {
+                    appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
+                });
             }
+            loadSidebarList();
+        } catch (e) {
+            console.error("Error al cargar conversación:", e);
         }
+    }
 
-        newChatBtn.addEventListener('click', createNewChat);
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
 
-        // Seleccionar Chat existente del menú
-        async function selectChat(chatId) {
-            currentChatId = chatId;
-            try {
-                const res = await fetch(`/api/chats/${chatId}/messages`);
-                const messages = await res.json();
-                chatBox.innerHTML = '';
+        appendMessage('user', text);
+        userInput.value = '';
 
-                if (!messages || messages.length === 0) {
-                    chatBox.innerHTML = `
-                        <div class="message system-welcome">
-                            <p>Hola. ¿En qué te puedo colaborar hoy?</p>
-                        </div>`;
-                } else {
-                    messages.forEach(m => {
-                        appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
-                    });
-                }
-                loadSidebarList();
-            } catch (e) {
-                console.error("Error al cargar conversación:", e);
-            }
-        }
-
-        // Enviar Mensaje (Sin limpiar la pantalla)
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            // 1. Pinta el mensaje del usuario de inmediato
-            appendMessage('user', text);
-            userInput.value = '';
-
-            try {
-                // 2. Envía la petición al servidor
-                const headers = await getAuthHeaders();
+        try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers,
-                    body: JSON.stringify({ message: text, chat_id: currentChatId })
-                });
+                body: JSON.stringify({ message: text, chat_id: currentChatId })
+            });
 
-                const data = await res.json();
-                
-                // 3. Pinta la respuesta del bot sin reiniciar el cuadro
-                if (data.response) {
-                    appendMessage('bot', data.response);
-                    loadSidebarList(); // Solo actualiza los nombres en el menú lateral
-                } else {
-                    appendMessage('bot', 'Error: ' + (data.error || 'No hay respuesta.'));
-                }
-            } catch (err) {
-                appendMessage('bot', 'Error de conexión con el servidor.');
+            const data = await res.json();
+
+            if (data.response) {
+                appendMessage('bot', data.response);
+                loadSidebarList();
+            } else {
+                appendMessage('bot', 'Error: ' + (data.error || 'No hay respuesta.'));
             }
-        });
-
-        initApp();
+        } catch (err) {
+            appendMessage('bot', 'Error de conexión con el servidor.');
+        }
     });
-       const loginScreen = document.getElementById('login-screen');
-const mainApp = document.querySelector('.container');
 
-document.getElementById('google-login-btn').addEventListener('click', async () => {
-    await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
-});
+    document.getElementById('google-login-btn').addEventListener('click', async () => {
+        await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+    });
 
-document.getElementById('email-login-btn').addEventListener('click', async () => {
-    const email = document.getElementById('email-input').value;
-    const password = document.getElementById('password-input').value;
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) alert(error.message);
-});
+    document.getElementById('email-login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email-input').value;
+        const password = document.getElementById('password-input').value;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+    });
 
-document.getElementById('email-signup-btn').addEventListener('click', async () => {
-    const email = document.getElementById('email-input').value;
-    const password = document.getElementById('password-input').value;
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) alert(error.message);
-    else alert('Cuenta creada, revisa tu correo si pide confirmación.');
-});
+    document.getElementById('email-signup-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email-input').value;
+        const password = document.getElementById('password-input').value;
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else alert('Cuenta creada, revisa tu correo si pide confirmación.');
+    });
 
-// Comprueba si ya hay sesión al cargar la página
-async function checkSession() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-        loginScreen.style.display = 'none';
-        mainApp.style.display = 'flex';
-        initApp(session);
-    } else {
-        loginScreen.style.display = 'flex';
-        mainApp.style.display = 'none';
+    async function checkSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'flex';
+            initApp();
+        } else {
+            loginScreen.style.display = 'flex';
+            mainApp.style.display = 'none';
+        }
     }
-}
 
-// Escucha cambios de sesión (login/logout, incluido tras el redirect de Google)
-supabaseClient.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        checkSession();
+    });
+
     checkSession();
-});
 
-checkSession();
-       document.getElementById('logout-btn').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-});
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+    });
 </script>
 </body>
 </html>
