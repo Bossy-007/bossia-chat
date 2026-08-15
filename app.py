@@ -42,7 +42,7 @@ def get_user_from_token(req):
     def buscar_en_web(consulta):
         if not tavily_key:
         return ""
-    try:
+        try:
         response = requests.post(
             "https://api.tavily.com/search",
             json={"api_key": tavily_key, "query": consulta, "search_depth": "basic", "max_results": 3},
