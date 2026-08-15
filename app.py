@@ -39,10 +39,10 @@ def get_user_from_token(req):
     except Exception as e:
         print(f"Error validando token: {e}")
         return None
-    def buscar_en_web(consulta):
-        if not tavily_key:
+def buscar_en_web(consulta):
+    if not tavily_key:
         return ""
-        try:
+    try:
         response = requests.post(
             "https://api.tavily.com/search",
             json={"api_key": tavily_key, "query": consulta, "search_depth": "basic", "max_results": 3},
