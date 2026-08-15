@@ -63,26 +63,30 @@ def index():
 
 @app.route("/api/chats", methods=["GET"])
 def get_chats():
+    user_id = get_user_from_token(request)
+    if not user_id:
+        return jsonify({"error": "No autorizado"}), 401
     if supabase:
         try:
-            res = supabase.table("chats").select("*").order("created_at", desc=True).execute()
+            res = supabase.table("chats").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
             return jsonify(res.data)
         except Exception as e:
             print(f"Error obteniendo chats de Supabase: {e}")
-    
-    # Fallback local
-    chats_list = [{"id": cid, "title": data["title"]} for cid, data in local_chats.items()]
-    return jsonify(chats_list)
+    return jsonify([])
 
 @app.route("/api/chats", methods=["POST"])
 def create_chat():
+    user_id = get_user_from_token(request)
+    if not user_id:
+        return jsonify({"error": "No autorizado"}), 401
     if supabase:
         try:
-            res = supabase.table("chats").insert({"title": "Nuevo Chat"}).execute()
+            res = supabase.table("chats").insert({"title": "Nuevo Chat", "user_id": user_id}).execute()
             if res.data:
                 return jsonify(res.data[0])
         except Exception as e:
             print(f"Error creando chat en Supabase: {e}")
+            return jsonify({"error": "No se pudo crear el chat"}), 500
     
     # Fallback local
     new_id = str(uuid.uuid4())
