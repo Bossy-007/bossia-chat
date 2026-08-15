@@ -40,7 +40,7 @@ def get_user_from_token(req):
         print(f"Error validando token: {e}")
         return None
     def buscar_en_web(consulta):
-    if not tavily_key:
+        if not tavily_key:
         return ""
     try:
         response = requests.post(
