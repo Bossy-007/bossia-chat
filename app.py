@@ -43,7 +43,11 @@ def buscar_en_web(consulta):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        supabase_url=os.environ.get("SUPABASE_URL"),
+        supabase_anon_key=os.environ.get("SUPABASE_ANON_KEY")  # nueva variable, la publishable
+    )
 
 @app.route("/api/chats", methods=["GET"])
 def get_chats():
