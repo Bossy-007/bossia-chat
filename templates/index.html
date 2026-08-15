@@ -304,9 +304,10 @@ await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers });
 
             try {
                 // 2. Envía la petición al servidor
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const headers = await getAuthHeaders();
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers,
                     body: JSON.stringify({ message: text, chat_id: currentChatId })
                 });
 
