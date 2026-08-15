@@ -191,7 +191,8 @@
         // Cargar lista de la barra lateral
         async function loadSidebarList() {
             try {
-                const res = await fetch('/api/chats');
+              const headers = await getAuthHeaders();
+const res = await fetch('/api/chats', { headers });
                 const chats = await res.json();
                 chatList.innerHTML = '';
 
@@ -213,7 +214,8 @@
                         delBtn.addEventListener('click', async (e) => {
                             e.stopPropagation();
                             if (!confirm('¿Borrar esta conversación?')) return;
-                            await fetch(`/api/chats/${chat.id}`, { method: 'DELETE' });
+                            const headers = await getAuthHeaders();
+await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers });
                             if (chat.id === currentChatId) {
                                 createNewChat();
                             } else {
