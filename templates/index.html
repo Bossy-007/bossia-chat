@@ -358,6 +358,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 
 checkSession();
+       document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+});
 </script>
 </body>
 </html>
