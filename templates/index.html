@@ -170,11 +170,33 @@
                 chatList.innerHTML = '';
 
                 if (Array.isArray(chats) && chats.length > 0) {
-                    chats.forEach(chat => {
+                   chats.forEach(chat => {
                         const li = document.createElement('li');
                         li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-                        li.innerText = chat.title || 'Nuevo Chat';
-                        li.addEventListener('click', () => selectChat(chat.id));
+
+                        const span = document.createElement('span');
+                        span.innerText = chat.title || 'Nuevo Chat';
+                        span.style.flex = '1';
+                        span.style.overflow = 'hidden';
+                        span.style.textOverflow = 'ellipsis';
+                        span.addEventListener('click', () => selectChat(chat.id));
+
+                        const delBtn = document.createElement('button');
+                        delBtn.innerText = '🗑';
+                        delBtn.className = 'delete-chat-btn';
+                        delBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (!confirm('¿Borrar esta conversación?')) return;
+                            await fetch(`/api/chats/${chat.id}`, { method: 'DELETE' });
+                            if (chat.id === currentChatId) {
+                                createNewChat();
+                            } else {
+                                loadSidebarList();
+                            }
+                        });
+
+                        li.appendChild(span);
+                        li.appendChild(delBtn);
                         chatList.appendChild(li);
                     });
                 }
