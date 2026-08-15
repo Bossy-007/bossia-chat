@@ -4,6 +4,7 @@ import requests
 from flask import Flask, render_template, request, jsonify
 from groq import Groq
 from supabase import create_client, Client
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -27,7 +28,18 @@ if supabase_url and supabase_key:
 # Memoria local de respaldo por si Supabase falla
 local_chats = {}
 
-def buscar_en_web(consulta):
+def get_user_from_token(req):
+    auth_header = req.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user.id
+    except Exception as e:
+        print(f"Error validando token: {e}")
+        return None
+    def buscar_en_web(consulta):
     if not tavily_key:
         return ""
     try:
