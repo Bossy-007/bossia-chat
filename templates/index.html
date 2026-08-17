@@ -8,21 +8,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabaseClient = window.supabase.createClient(
-    "{{ supabase_url }}",
-    "{{ supabase_anon_key }}"
-  );
-    async function getAuthHeaders() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token || ''}`
-    };
-}
-</script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseClient = window.supabase.createClient(
+            "{{ supabase_url }}",
+            "{{ supabase_anon_key }}"
+        );
+
+        async function getAuthHeaders() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token || ''}`
+            };
+        }
+    </script>
+
     <style>
         .sidebar-toggle {
             position: fixed;
@@ -105,16 +106,16 @@
 </head>
 <body>
     <div id="login-screen" class="login-screen">
-    <div class="login-box">
-        <h1>BossIA</h1>
-        <button id="google-login-btn">Iniciar sesión con Google</button>
-        <div class="divider">o</div>
-        <input type="email" id="email-input" placeholder="Correo electrónico">
-        <input type="password" id="password-input" placeholder="Contraseña">
-        <button id="email-login-btn">Entrar</button>
-        <button id="email-signup-btn">Crear cuenta</button>
+        <div class="login-box">
+            <h1>BossIA</h1>
+            <button id="google-login-btn">Iniciar sesión con Google</button>
+            <div class="divider">o</div>
+            <input type="email" id="email-input" placeholder="Correo electrónico">
+            <input type="password" id="password-input" placeholder="Contraseña">
+            <button id="email-login-btn">Entrar</button>
+            <button id="email-signup-btn">Crear cuenta</button>
+        </div>
     </div>
-</div>
 
     <button class="sidebar-toggle" id="toggle-btn">☰</button>
 
@@ -143,10 +144,10 @@
             </div>
 
             <form id="chat-form" class="chat-form">
-                <input 
-                    type="text" 
-                    id="user-input" 
-                    placeholder="Escribe tu mensaje aquí..." 
+                <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Escribe tu mensaje aquí..."
                     autocomplete="off"
                     required
                 >
@@ -160,8 +161,7 @@
         </section>
     </main>
 
-   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    <script>
         let currentChatId = null;
 
         const sidebar = document.getElementById('sidebar');
@@ -171,206 +171,195 @@
         const userInput = document.getElementById('user-input');
         const chatBox = document.getElementById('chat-box');
         const chatList = document.getElementById('chat-list');
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.querySelector('.container');
 
-        <script>
-    let currentChatId = null;
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
 
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('toggle-btn');
-    const newChatBtn = document.getElementById('new-chat-btn');
-    const chatForm = document.getElementById('chat-form');
-    const userInput = document.getElementById('user-input');
-    const chatBox = document.getElementById('chat-box');
-    const chatList = document.getElementById('chat-list');
-    const loginScreen = document.getElementById('login-screen');
-    const mainApp = document.querySelector('.container');
-
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-    });
-
-    function appendMessage(role, text) {
-        const div = document.createElement('div');
-        div.className = `message ${role}-message`;
-        const p = document.createElement('p');
-        p.innerText = text;
-        div.appendChild(p);
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    async function loadSidebarList() {
-        try {
-            const headers = await getAuthHeaders();
-            const res = await fetch('/api/chats', { headers });
-            const chats = await res.json();
-            chatList.innerHTML = '';
-
-            if (Array.isArray(chats) && chats.length > 0) {
-                chats.forEach(chat => {
-                    const li = document.createElement('li');
-                    li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-
-                    const span = document.createElement('span');
-                    span.innerText = chat.title || 'Nuevo Chat';
-                    span.style.flex = '1';
-                    span.style.overflow = 'hidden';
-                    span.style.textOverflow = 'ellipsis';
-                    span.addEventListener('click', () => selectChat(chat.id));
-
-                    const delBtn = document.createElement('button');
-                    delBtn.innerText = '🗑';
-                    delBtn.className = 'delete-chat-btn';
-                    delBtn.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        if (!confirm('¿Borrar esta conversación?')) return;
-                        const delHeaders = await getAuthHeaders();
-                        await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers: delHeaders });
-                        if (chat.id === currentChatId) {
-                            createNewChat();
-                        } else {
-                            loadSidebarList();
-                        }
-                    });
-
-                    li.appendChild(span);
-                    li.appendChild(delBtn);
-                    chatList.appendChild(li);
-                });
-            }
-        } catch (e) {
-            console.error("Error al actualizar menú:", e);
+        function appendMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role}-message`;
+            const p = document.createElement('p');
+            p.innerText = text;
+            div.appendChild(p);
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
-    }
 
-    async function initApp() {
-        try {
-            const headers = await getAuthHeaders();
-            const res = await fetch('/api/chats', { headers });
-            const chats = await res.json();
-            if (Array.isArray(chats) && chats.length > 0) {
-                selectChat(chats[0].id);
-            } else {
+        async function loadSidebarList() {
+            try {
+                const headers = await getAuthHeaders();
+                const res = await fetch('/api/chats', { headers });
+                const chats = await res.json();
+                chatList.innerHTML = '';
+
+                if (Array.isArray(chats) && chats.length > 0) {
+                    chats.forEach(chat => {
+                        const li = document.createElement('li');
+                        li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+
+                        const span = document.createElement('span');
+                        span.innerText = chat.title || 'Nuevo Chat';
+                        span.style.flex = '1';
+                        span.style.overflow = 'hidden';
+                        span.style.textOverflow = 'ellipsis';
+                        span.addEventListener('click', () => selectChat(chat.id));
+
+                        const delBtn = document.createElement('button');
+                        delBtn.innerText = '🗑';
+                        delBtn.className = 'delete-chat-btn';
+                        delBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (!confirm('¿Borrar esta conversación?')) return;
+                            const delHeaders = await getAuthHeaders();
+                            await fetch(`/api/chats/${chat.id}`, { method: 'DELETE', headers: delHeaders });
+                            if (chat.id === currentChatId) {
+                                createNewChat();
+                            } else {
+                                loadSidebarList();
+                            }
+                        });
+
+                        li.appendChild(span);
+                        li.appendChild(delBtn);
+                        chatList.appendChild(li);
+                    });
+                }
+            } catch (e) {
+                console.error("Error al actualizar menú:", e);
+            }
+        }
+
+        async function initApp() {
+            try {
+                const headers = await getAuthHeaders();
+                const res = await fetch('/api/chats', { headers });
+                const chats = await res.json();
+                if (Array.isArray(chats) && chats.length > 0) {
+                    selectChat(chats[0].id);
+                } else {
+                    createNewChat();
+                }
+            } catch (e) {
                 createNewChat();
             }
-        } catch (e) {
-            createNewChat();
         }
-    }
 
-    async function createNewChat() {
-        try {
-            const headers = await getAuthHeaders();
-            const res = await fetch('/api/chats', { method: 'POST', headers });
-            const chat = await res.json();
-            currentChatId = chat.id;
+        async function createNewChat() {
+            try {
+                const headers = await getAuthHeaders();
+                const res = await fetch('/api/chats', { method: 'POST', headers });
+                const chat = await res.json();
+                currentChatId = chat.id;
 
-            chatBox.innerHTML = `
-                <div class="message system-welcome">
-                    <p>Hola. ¿En qué te puedo colaborar hoy?</p>
-                </div>`;
-
-            loadSidebarList();
-        } catch (e) {
-            console.error("Error al crear chat:", e);
-        }
-    }
-
-    newChatBtn.addEventListener('click', createNewChat);
-
-    async function selectChat(chatId) {
-        currentChatId = chatId;
-        try {
-            const headers = await getAuthHeaders();
-            const res = await fetch(`/api/chats/${chatId}/messages`, { headers });
-            const messages = await res.json();
-            chatBox.innerHTML = '';
-
-            if (!messages || messages.length === 0) {
                 chatBox.innerHTML = `
                     <div class="message system-welcome">
                         <p>Hola. ¿En qué te puedo colaborar hoy?</p>
                     </div>`;
-            } else {
-                messages.forEach(m => {
-                    appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
-                });
-            }
-            loadSidebarList();
-        } catch (e) {
-            console.error("Error al cargar conversación:", e);
-        }
-    }
 
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const text = userInput.value.trim();
-        if (!text) return;
-
-        appendMessage('user', text);
-        userInput.value = '';
-
-        try {
-            const headers = await getAuthHeaders();
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ message: text, chat_id: currentChatId })
-            });
-
-            const data = await res.json();
-
-            if (data.response) {
-                appendMessage('bot', data.response);
                 loadSidebarList();
-            } else {
-                appendMessage('bot', 'Error: ' + (data.error || 'No hay respuesta.'));
+            } catch (e) {
+                console.error("Error al crear chat:", e);
             }
-        } catch (err) {
-            appendMessage('bot', 'Error de conexión con el servidor.');
         }
-    });
 
-    document.getElementById('google-login-btn').addEventListener('click', async () => {
-        await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
-    });
+        newChatBtn.addEventListener('click', createNewChat);
 
-    document.getElementById('email-login-btn').addEventListener('click', async () => {
-        const email = document.getElementById('email-input').value;
-        const password = document.getElementById('password-input').value;
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-    });
+        async function selectChat(chatId) {
+            currentChatId = chatId;
+            try {
+                const headers = await getAuthHeaders();
+                const res = await fetch(`/api/chats/${chatId}/messages`, { headers });
+                const messages = await res.json();
+                chatBox.innerHTML = '';
 
-    document.getElementById('email-signup-btn').addEventListener('click', async () => {
-        const email = document.getElementById('email-input').value;
-        const password = document.getElementById('password-input').value;
-        const { error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) alert(error.message);
-        else alert('Cuenta creada, revisa tu correo si pide confirmación.');
-    });
-
-    async function checkSession() {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'flex';
-            initApp();
-        } else {
-            loginScreen.style.display = 'flex';
-            mainApp.style.display = 'none';
+                if (!messages || messages.length === 0) {
+                    chatBox.innerHTML = `
+                        <div class="message system-welcome">
+                            <p>Hola. ¿En qué te puedo colaborar hoy?</p>
+                        </div>`;
+                } else {
+                    messages.forEach(m => {
+                        appendMessage(m.role === 'user' ? 'user' : 'bot', m.content);
+                    });
+                }
+                loadSidebarList();
+            } catch (e) {
+                console.error("Error al cargar conversación:", e);
+            }
         }
-    }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            userInput.value = '';
+
+            try {
+                const headers = await getAuthHeaders();
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ message: text, chat_id: currentChatId })
+                });
+
+                const data = await res.json();
+
+                if (data.response) {
+                    appendMessage('bot', data.response);
+                    loadSidebarList();
+                } else {
+                    appendMessage('bot', 'Error: ' + (data.error || 'No hay respuesta.'));
+                }
+            } catch (err) {
+                appendMessage('bot', 'Error de conexión con el servidor.');
+            }
+        });
+
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+        });
+
+        document.getElementById('email-login-btn').addEventListener('click', async () => {
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+        });
+
+        document.getElementById('email-signup-btn').addEventListener('click', async () => {
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) alert(error.message);
+            else alert('Cuenta creada, revisa tu correo si pide confirmación.');
+        });
+
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                loginScreen.style.display = 'none';
+                mainApp.style.display = 'flex';
+                initApp();
+            } else {
+                loginScreen.style.display = 'flex';
+                mainApp.style.display = 'none';
+            }
+        }
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            checkSession();
+        });
+
         checkSession();
-    });
 
-    checkSession();
-
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-        await supabaseClient.auth.signOut();
-    });
-</script>
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+        });
+    </script>
 </body>
 </html>
